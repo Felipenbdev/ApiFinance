@@ -1,5 +1,6 @@
 package com.finances.finances.service;
 
+import com.finances.finances.model.LoginRequest;
 import com.finances.finances.model.RegisterRequest;
 import com.finances.finances.model.User;
 import com.finances.finances.model.UserResponse;
@@ -48,6 +49,22 @@ public class UserService {
         response.setCreatedAt(user.getCreatedAt());
 
         return response;
+    }
+    public UserResponse login(LoginRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.UNAUTHORIZED,
+                        "Invalid email or password"
+                ));
+
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "Invalid email or password"
+            );
+        }
+
+        return toResponse(user);
     }
 
 }

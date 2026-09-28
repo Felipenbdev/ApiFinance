@@ -1,6 +1,7 @@
 package com.finances.finances.controller;
 
 
+import com.finances.finances.model.LoginRequest;
 import com.finances.finances.model.RegisterRequest;
 import com.finances.finances.model.User;
 import com.finances.finances.model.UserResponse;
@@ -25,5 +26,9 @@ public class UserController {
     @PostMapping
     public UserResponse creatUser(@Valid @RequestBody RegisterRequest request) {
         return userService.createUser(request);
+    }
+    @PostMapping("/login")
+    public UserResponse login(@RequestBody LoginRequest request) {
+        return userService.login(request);
     }
 }
