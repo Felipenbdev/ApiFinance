@@ -1,8 +1,11 @@
 package com.finances.finances.controller;
 
 
+import com.finances.finances.model.RegisterRequest;
 import com.finances.finances.model.User;
+import com.finances.finances.model.UserResponse;
 import com.finances.finances.service.UserService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -20,8 +23,7 @@ public class UserController {
     }
 
     @PostMapping
-    public User creatUser(@RequestBody User user){
-
-        return  userService.createUser(user);
+    public UserResponse creatUser(@Valid @RequestBody RegisterRequest request) {
+        return userService.createUser(request);
     }
 }
