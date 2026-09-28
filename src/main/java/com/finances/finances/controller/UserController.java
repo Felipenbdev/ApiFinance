@@ -3,7 +3,6 @@ package com.finances.finances.controller;
 
 import com.finances.finances.model.LoginRequest;
 import com.finances.finances.model.RegisterRequest;
-import com.finances.finances.model.User;
 import com.finances.finances.model.UserResponse;
 import com.finances.finances.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -38,8 +37,14 @@ public class UserController {
     ) {
         return userService.login(request, httpRequest, httpResponse);
     }
+
     @GetMapping("/me")
     public UserResponse me() {
         return userService.getCurrentUser();
+    }
+
+    @PostMapping("/logout")
+    public void logout(HttpServletRequest request) {
+        request.getSession().invalidate();
     }
 }
