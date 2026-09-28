@@ -6,6 +6,8 @@ import com.finances.finances.model.RegisterRequest;
 import com.finances.finances.model.User;
 import com.finances.finances.model.UserResponse;
 import com.finances.finances.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,8 +29,17 @@ public class UserController {
     public UserResponse creatUser(@Valid @RequestBody RegisterRequest request) {
         return userService.createUser(request);
     }
+
     @PostMapping("/login")
-    public UserResponse login(@RequestBody LoginRequest request) {
-        return userService.login(request);
+    public UserResponse login(
+            @RequestBody LoginRequest request,
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse
+    ) {
+        return userService.login(request, httpRequest, httpResponse);
+    }
+    @GetMapping("/me")
+    public UserResponse me() {
+        return userService.getCurrentUser();
     }
 }
