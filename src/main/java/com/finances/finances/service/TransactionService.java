@@ -1,9 +1,6 @@
 package com.finances.finances.service;
 
-import com.finances.finances.model.CreateTransactionRequest;
-import com.finances.finances.model.Transaction;
-import com.finances.finances.model.TransactionResponse;
-import com.finances.finances.model.User;
+import com.finances.finances.model.*;
 import com.finances.finances.repository.TransactionRepository;
 import com.finances.finances.repository.UserRepository;
 import org.springframework.security.core.Authentication;
@@ -87,4 +84,59 @@ public class TransactionService {
                 })
                 .toList();
     }
+
+    public void deleteTransaction(Long id) {
+
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new RuntimeException("User not authenticated");
+        }
+
+        User user = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Transaction transaction = transactionRepository.findByIdAndUser(id, user)
+                .orElseThrow(() -> new RuntimeException("Transaction not found"));
+
+        transactionRepository.delete(transaction);
+    }
+    public TransactionResponse updateTransaction(
+            Long id,
+            UpdateTransactionRequest request
+    ) {
+
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new RuntimeException("User not authenticated");
+        }
+
+        User user = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Transaction transaction = transactionRepository.findByIdAndUser(id, user)
+                .orElseThrow(() -> new RuntimeException("Transaction not found"));
+
+        transaction.setAmount(request.getAmount());
+        transaction.setDescription(request.getDescription());
+        transaction.setDate(request.getDate());
+        transaction.setType(request.getType());
+
+        Transaction updatedTransaction =
+                transactionRepository.save(transaction);
+
+        TransactionResponse response = new TransactionResponse();
+
+        response.setId(updatedTransaction.getId());
+        response.setAmount(updatedTransaction.getAmount());
+        response.setDescription(updatedTransaction.getDescription());
+        response.setDate(updatedTransaction.getDate());
+        response.setType(updatedTransaction.getType());
+
+        return response;
+    }
+
 }
