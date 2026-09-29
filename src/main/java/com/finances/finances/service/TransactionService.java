@@ -1,11 +1,18 @@
 package com.finances.finances.service;
 
-import com.finances.finances.model.*;
+import com.finances.finances.model.CreateTransactionRequest;
+import com.finances.finances.model.Transaction;
+import com.finances.finances.model.TransactionResponse;
+import com.finances.finances.model.UpdateTransactionRequest;
+import com.finances.finances.model.User;
 import com.finances.finances.repository.TransactionRepository;
 import com.finances.finances.repository.UserRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -23,17 +30,11 @@ public class TransactionService {
         this.userRepository = userRepository;
     }
 
-    public TransactionResponse createTransaction(CreateTransactionRequest request) {
+    public TransactionResponse createTransaction(
+            CreateTransactionRequest request
+    ) {
 
-        Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
-
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new RuntimeException("User not authenticated");
-        }
-
-        User user = userRepository.findByEmail(authentication.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = getAuthenticatedUser();
 
         Transaction transaction = new Transaction();
 
@@ -43,82 +44,37 @@ public class TransactionService {
         transaction.setType(request.getType());
         transaction.setUser(user);
 
-        Transaction savedTransaction = transactionRepository.save(transaction);
+        Transaction savedTransaction =
+                transactionRepository.save(transaction);
 
-        TransactionResponse response = new TransactionResponse();
-
-        response.setId(savedTransaction.getId());
-        response.setAmount(savedTransaction.getAmount());
-        response.setDescription(savedTransaction.getDescription());
-        response.setDate(savedTransaction.getDate());
-        response.setType(savedTransaction.getType());
-
-        return response;
+        return toResponse(savedTransaction);
     }
+
     public List<TransactionResponse> getUserTransactions() {
 
-        Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
-
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new RuntimeException("User not authenticated");
-        }
-
-        User user = userRepository.findByEmail(authentication.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = getAuthenticatedUser();
 
         List<Transaction> transactions =
                 transactionRepository.findAllByUser(user);
 
         return transactions.stream()
-                .map(transaction -> {
-                    TransactionResponse response = new TransactionResponse();
-
-                    response.setId(transaction.getId());
-                    response.setAmount(transaction.getAmount());
-                    response.setDescription(transaction.getDescription());
-                    response.setDate(transaction.getDate());
-                    response.setType(transaction.getType());
-
-                    return response;
-                })
+                .map(this::toResponse)
                 .toList();
     }
 
-    public void deleteTransaction(Long id) {
-
-        Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
-
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new RuntimeException("User not authenticated");
-        }
-
-        User user = userRepository.findByEmail(authentication.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        Transaction transaction = transactionRepository.findByIdAndUser(id, user)
-                .orElseThrow(() -> new RuntimeException("Transaction not found"));
-
-        transactionRepository.delete(transaction);
-    }
     public TransactionResponse updateTransaction(
             Long id,
             UpdateTransactionRequest request
     ) {
 
-        Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
+        User user = getAuthenticatedUser();
 
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new RuntimeException("User not authenticated");
-        }
-
-        User user = userRepository.findByEmail(authentication.getName())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        Transaction transaction = transactionRepository.findByIdAndUser(id, user)
-                .orElseThrow(() -> new RuntimeException("Transaction not found"));
+        Transaction transaction =
+                transactionRepository.findByIdAndUser(id, user)
+                        .orElseThrow(() -> new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
+                                "Transaction not found"
+                        ));
 
         transaction.setAmount(request.getAmount());
         transaction.setDescription(request.getDescription());
@@ -128,15 +84,55 @@ public class TransactionService {
         Transaction updatedTransaction =
                 transactionRepository.save(transaction);
 
+        return toResponse(updatedTransaction);
+    }
+
+    public void deleteTransaction(Long id) {
+
+        User user = getAuthenticatedUser();
+
+        Transaction transaction =
+                transactionRepository.findByIdAndUser(id, user)
+                        .orElseThrow(() -> new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
+                                "Transaction not found"
+                        ));
+
+        transactionRepository.delete(transaction);
+    }
+
+    private User getAuthenticatedUser() {
+
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || authentication instanceof AnonymousAuthenticationToken) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "User not authenticated"
+            );
+        }
+
+        return userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "User not found"
+                ));
+    }
+
+    private TransactionResponse toResponse(Transaction transaction) {
+
         TransactionResponse response = new TransactionResponse();
 
-        response.setId(updatedTransaction.getId());
-        response.setAmount(updatedTransaction.getAmount());
-        response.setDescription(updatedTransaction.getDescription());
-        response.setDate(updatedTransaction.getDate());
-        response.setType(updatedTransaction.getType());
+        response.setId(transaction.getId());
+        response.setAmount(transaction.getAmount());
+        response.setDescription(transaction.getDescription());
+        response.setDate(transaction.getDate());
+        response.setType(transaction.getType());
 
         return response;
     }
-
 }

@@ -4,7 +4,15 @@ import com.finances.finances.model.CreateTransactionRequest;
 import com.finances.finances.model.TransactionResponse;
 import com.finances.finances.model.UpdateTransactionRequest;
 import com.finances.finances.service.TransactionService;
-import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
@@ -20,7 +28,7 @@ public class TransactionController {
 
     @PostMapping
     public TransactionResponse createTransaction(
-            @RequestBody CreateTransactionRequest request
+            @Valid @RequestBody CreateTransactionRequest request
     ) {
         return transactionService.createTransaction(request);
     }
@@ -30,16 +38,16 @@ public class TransactionController {
         return transactionService.getUserTransactions();
     }
 
-    @DeleteMapping("/{id}")
-    public void deleteTransaction(@PathVariable Long id) {
-        transactionService.deleteTransaction(id);
-    }
-
     @PutMapping("/{id}")
     public TransactionResponse updateTransaction(
             @PathVariable Long id,
-            @RequestBody UpdateTransactionRequest request
+            @Valid @RequestBody UpdateTransactionRequest request
     ) {
         return transactionService.updateTransaction(id, request);
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteTransaction(@PathVariable Long id) {
+        transactionService.deleteTransaction(id);
     }
 }
